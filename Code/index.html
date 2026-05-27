@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BarberOS — Sistema de Gestão</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">Barber<span>OS</span></div>
+      <div class="tagline">Sistema de Gestão</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-label">Principal</div>
+        <div class="nav-item active" data-page="dashboard" onclick="App.navigate('dashboard')">
+          <span class="icon">📊</span> Dashboard
+        </div>
+        <div class="nav-item" data-page="agenda" onclick="App.navigate('agenda')">
+          <span class="icon">📅</span> Agenda
+          <span class="nav-badge" id="badge-agenda">0</span>
+        </div>
+        <div class="nav-item" data-page="cortes" onclick="App.navigate('cortes')">
+          <span class="icon">✂️</span> Cortes
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Cadastros</div>
+        <div class="nav-item" data-page="clientes" onclick="App.navigate('clientes')">
+          <span class="icon">👤</span> Clientes
+        </div>
+        <div class="nav-item" data-page="barbeiros" onclick="App.navigate('barbeiros')">
+          <span class="icon">💈</span> Barbeiros
+        </div>
+        <div class="nav-item" data-page="servicos" onclick="App.navigate('servicos')">
+          <span class="icon">📋</span> Serviços
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Financeiro</div>
+        <div class="nav-item" data-page="caixa" onclick="App.navigate('caixa')">
+          <span class="icon">💰</span> Caixa
+        </div>
+        <div class="nav-item" data-page="relatorios" onclick="App.navigate('relatorios')">
+          <span class="icon">📈</span> Relatórios
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">BarberOS v2.1.0</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="topbar-date" id="topbar-date"></div>
+        <button class="btn btn-primary btn-sm" onclick="App.quickAction()">
+          ＋ Novo Agendamento
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ════ DASHBOARD ════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="dash-stats"></div>
+        <div class="two-col">
+          <div>
+            <div class="section-header">
+              <div class="section-title">Agenda do Dia</div>
+              <button class="btn btn-ghost btn-sm" onclick="App.navigate('agenda')">Ver tudo</button>
+            </div>
+            <div class="table-wrap">
+              <div class="recent-list" id="dash-agenda"></div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header">
+              <div class="section-title">Últimos Cortes</div>
+              <button class="btn btn-ghost btn-sm" onclick="App.navigate('cortes')">Ver tudo</button>
+            </div>
+            <div class="table-wrap">
+              <div class="recent-list" id="dash-recentes"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <div class="section-header"><div class="section-title">Desempenho dos Barbeiros</div></div>
+          <div class="three-col" id="dash-barbers"></div>
+        </div>
+      </div>
+
+      <!-- ════ AGENDA ════ -->
+      <div class="page" id="page-agenda">
+        <div class="two-col mb-6">
+          <div>
+            <div class="section-header" style="margin-bottom:14px;">
+              <div class="section-title">Agendamentos</div>
+              <button class="btn btn-primary btn-sm" onclick="ModalAgenda.open()">＋ Agendar</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Horário</th><th>Cliente</th><th>Barbeiro</th><th>Serviço</th><th>Status</th><th></th>
+                  </tr>
+                </thead>
+                <tbody id="agenda-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="mini-cal" id="mini-cal"></div>
+            <div style="margin-top:14px;" id="agenda-day-info"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ CORTES ════ -->
+      <div class="page" id="page-cortes">
+        <div class="section-header">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div class="section-title">Histórico de Cortes</div>
+            <div class="search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Buscar cliente..." oninput="Cortes.filter(this.value)" id="corte-search">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="ModalCorte.open()">✂️ Registrar Corte</button>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="Cortes.setTab('todos',this)">Todos</button>
+          <button class="tab" onclick="Cortes.setTab('hoje',this)">Hoje</button>
+          <button class="tab" onclick="Cortes.setTab('semana',this)">Esta Semana</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Data/Hora</th><th>Cliente</th><th>Barbeiro</th><th>Serviço(s)</th><th>Total</th><th>Pagamento</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="cortes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════ CLIENTES ════ -->
+      <div class="page" id="page-clientes">
+        <div class="section-header">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div class="section-title">Clientes</div>
+            <div class="search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" placeholder="Buscar..." oninput="Clientes.filter(this.value)">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="ModalCliente.open()">＋ Novo Cliente</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Cliente</th><th>Telefone</th><th>Barbeiro Fixo</th><th>Cortes</th><th>Gasto Total</th><th>Última Visita</th><th></th></tr>
+            </thead>
+            <tbody id="clientes-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════ BARBEIROS ════ -->
+      <div class="page" id="page-barbeiros">
+        <div class="section-header">
+          <div class="section-title">Equipe</div>
+          <button class="btn btn-primary" onclick="ModalBarbeiro.open()">＋ Novo Barbeiro</button>
+        </div>
+        <div class="three-col" id="barbeiros-grid"></div>
+      </div>
+
+      <!-- ════ SERVIÇOS ════ -->
+      <div class="page" id="page-servicos">
+        <div class="section-header">
+          <div class="section-title">Serviços</div>
+          <button class="btn btn-primary" onclick="ModalServico.open()">＋ Novo Serviço</button>
+        </div>
+        <div class="three-col" id="servicos-grid"></div>
+      </div>
+
+      <!-- ════ CAIXA ════ -->
+      <div class="page" id="page-caixa">
+        <div class="stats-grid" id="caixa-stats" style="grid-template-columns:repeat(3,1fr);"></div>
+        <div class="two-col">
+          <div>
+            <div class="section-header"><div class="section-title">Movimentações</div></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead>
+                <tbody id="caixa-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="section-header"><div class="section-title">Por Forma de Pagamento</div></div>
+            <div class="card" id="caixa-pagamentos"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ RELATÓRIOS ════ -->
+      <div class="page" id="page-relatorios">
+        <div class="section-header"><div class="section-title">Relatórios</div></div>
+        <div class="three-col" id="relatorios-cards"></div>
+        <div style="margin-top:20px;">
+          <div class="section-header"><div class="section-title">Ranking de Serviços</div></div>
+          <div class="card" id="servicos-ranking"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- MODAL AGENDAMENTO -->
+<div class="modal-overlay" id="modal-agenda">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo Agendamento</div>
+      <button class="modal-close" onclick="ModalAgenda.close()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cliente</label>
+          <select id="ag-cliente"></select>
+        </div>
+        <div class="form-group">
+          <label>Barbeiro</label>
+          <select id="ag-barbeiro"></select>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="ag-data">
+        </div>
+        <div class="form-group">
+          <label>Horário</label>
+          <input type="time" id="ag-hora" step="1800">
+        </div>
+        <div class="form-group span2">
+          <label>Serviços</label>
+          <div class="chips" id="ag-servicos-chips"></div>
+        </div>
+        <div class="form-group span2">
+          <label>Observação</label>
+          <textarea id="ag-obs" rows="2" placeholder="Alguma observação..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="ModalAgenda.close()">Cancelar</button>
+      <button class="btn btn-primary" onclick="ModalAgenda.save()">Confirmar Agendamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CORTE -->
+<div class="modal-overlay" id="modal-corte">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Registrar Corte</div>
+      <button class="modal-close" onclick="ModalCorte.close()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cliente</label>
+          <select id="co-cliente"></select>
+        </div>
+        <div class="form-group">
+          <label>Barbeiro</label>
+          <select id="co-barbeiro"></select>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="co-data">
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input type="time" id="co-hora">
+        </div>
+        <div class="form-group span2">
+          <label>Serviços Realizados</label>
+          <div class="chips" id="co-servicos-chips"></div>
+        </div>
+        <hr class="form-sep">
+        <div class="form-group">
+          <label>Pagamento</label>
+          <select id="co-pagamento">
+            <option value="dinheiro">💵 Dinheiro</option>
+            <option value="pix">📱 PIX</option>
+            <option value="débito">💳 Débito</option>
+            <option value="crédito">💳 Crédito</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Total (R$)</label>
+          <input type="number" id="co-total" step="0.01" min="0" placeholder="0,00">
+        </div>
+        <div class="form-group span2">
+          <label>Observações</label>
+          <textarea id="co-obs" rows="2" placeholder="Observações do corte..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="ModalCorte.close()">Cancelar</button>
+      <button class="btn btn-primary" onclick="ModalCorte.save()">✂️ Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-cliente-title">Novo Cliente</div>
+      <button class="modal-close" onclick="ModalCliente.close()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label>Nome Completo</label>
+          <input type="text" id="cl-nome" placeholder="Nome do cliente">
+        </div>
+        <div class="form-group">
+          <label>Telefone / WhatsApp</label>
+          <input type="text" id="cl-tel" placeholder="(00) 00000-0000">
+        </div>
+        <div class="form-group">
+          <label>Barbeiro Favorito</label>
+          <select id="cl-barbeiro"><option value="">— Nenhum —</option></select>
+        </div>
+        <div class="form-group span2">
+          <label>Observações / Preferências</label>
+          <textarea id="cl-obs" rows="2" placeholder="Estilo preferido, alergias, etc..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="ModalCliente.close()">Cancelar</button>
+      <button class="btn btn-primary" onclick="ModalCliente.save()" id="modal-cliente-btn">Salvar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BARBEIRO -->
+<div class="modal-overlay" id="modal-barbeiro">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-barbeiro-title">Novo Barbeiro</div>
+      <button class="modal-close" onclick="ModalBarbeiro.close()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" id="ba-nome" placeholder="Nome do barbeiro">
+        </div>
+        <div class="form-group">
+          <label>Especialidade</label>
+          <input type="text" id="ba-esp" placeholder="Ex: Degradê, Tesoura...">
+        </div>
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="ba-tel" placeholder="(00) 00000-0000">
+        </div>
+        <div class="form-group">
+          <label>Comissão (%)</label>
+          <input type="number" id="ba-com" min="0" max="100" step="1" placeholder="50">
+        </div>
+        <div class="form-group span2">
+          <label>Status</label>
+          <select id="ba-status">
+            <option value="ativo">✅ Ativo</option>
+            <option value="férias">🏖️ Férias</option>
+            <option value="inativo">⛔ Inativo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="ModalBarbeiro.close()">Cancelar</button>
+      <button class="btn btn-primary" onclick="ModalBarbeiro.save()" id="modal-barbeiro-btn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SERVIÇO -->
+<div class="modal-overlay" id="modal-servico">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-servico-title">Novo Serviço</div>
+      <button class="modal-close" onclick="ModalServico.close()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group span2">
+          <label>Nome do Serviço</label>
+          <input type="text" id="sv-nome" placeholder="Ex: Corte Degradê">
+        </div>
+        <div class="form-group">
+          <label>Preço (R$)</label>
+          <input type="number" id="sv-preco" min="0" step="0.50" placeholder="0,00">
+        </div>
+        <div class="form-group">
+          <label>Duração (min)</label>
+          <input type="number" id="sv-duracao" min="5" step="5" placeholder="30">
+        </div>
+        <div class="form-group span2">
+          <label>Categoria</label>
+          <select id="sv-cat">
+            <option value="corte">✂️ Corte</option>
+            <option value="barba">🪒 Barba</option>
+            <option value="combo">🔥 Combo</option>
+            <option value="tratamento">💆 Tratamento</option>
+            <option value="outros">📌 Outros</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="ModalServico.close()">Cancelar</button>
+      <button class="btn btn-primary" onclick="ModalServico.save()" id="modal-servico-btn">Salvar Serviço</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRM -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="confirm-dialog">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">Confirmar</div>
+    <div class="confirm-msg" id="confirm-msg">Tem certeza?</div>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="Confirm.cancel()">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok" onclick="Confirm.ok()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
