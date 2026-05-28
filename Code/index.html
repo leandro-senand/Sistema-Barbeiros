@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- [HTML-1] Adicionada meta description para SEO e acessibilidade -->
+<meta name="description" content="BarberOS — Sistema de Gestão para Barbearias. Controle de agenda, cortes, clientes e financeiro.">
 <title>BarberOS — Sistema de Gestão</title>
+<!-- [HTML-2] Adicionado preconnect para otimizar carregamento das fontes do Google -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -11,44 +16,47 @@
 
 <div class="app">
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <!-- [HTML-3] Adicionado role="navigation" e aria-label para acessibilidade com leitores de tela -->
+  <aside class="sidebar" role="navigation" aria-label="Menu principal">
     <div class="sidebar-logo">
-      <div class="brand">Barber<span>OS</span></div>
+      <!-- [HTML-4] Adicionado role="heading" e aria-level para semântica correta do título da marca -->
+      <div class="brand" role="heading" aria-level="1">Barber<span>OS</span></div>
       <div class="tagline">Sistema de Gestão</div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">
         <div class="nav-label">Principal</div>
-        <div class="nav-item active" data-page="dashboard" onclick="App.navigate('dashboard')">
-          <span class="icon">📊</span> Dashboard
+        <!-- [HTML-5] Adicionado role="button" e tabindex nos itens de nav para acessibilidade por teclado -->
+        <div class="nav-item active" role="button" tabindex="0" data-page="dashboard" onclick="App.navigate('dashboard')" onkeydown="if(event.key==='Enter')App.navigate('dashboard')">
+          <span class="icon" aria-hidden="true">📊</span> Dashboard
         </div>
-        <div class="nav-item" data-page="agenda" onclick="App.navigate('agenda')">
-          <span class="icon">📅</span> Agenda
-          <span class="nav-badge" id="badge-agenda">0</span>
+        <div class="nav-item" role="button" tabindex="0" data-page="agenda" onclick="App.navigate('agenda')" onkeydown="if(event.key==='Enter')App.navigate('agenda')">
+          <span class="icon" aria-hidden="true">📅</span> Agenda
+          <span class="nav-badge" id="badge-agenda" aria-label="agendamentos de hoje">0</span>
         </div>
-        <div class="nav-item" data-page="cortes" onclick="App.navigate('cortes')">
-          <span class="icon">✂️</span> Cortes
+        <div class="nav-item" role="button" tabindex="0" data-page="cortes" onclick="App.navigate('cortes')" onkeydown="if(event.key==='Enter')App.navigate('cortes')">
+          <span class="icon" aria-hidden="true">✂️</span> Cortes
         </div>
       </div>
       <div class="nav-section">
         <div class="nav-label">Cadastros</div>
-        <div class="nav-item" data-page="clientes" onclick="App.navigate('clientes')">
-          <span class="icon">👤</span> Clientes
+        <div class="nav-item" role="button" tabindex="0" data-page="clientes" onclick="App.navigate('clientes')" onkeydown="if(event.key==='Enter')App.navigate('clientes')">
+          <span class="icon" aria-hidden="true">👤</span> Clientes
         </div>
-        <div class="nav-item" data-page="barbeiros" onclick="App.navigate('barbeiros')">
-          <span class="icon">💈</span> Barbeiros
+        <div class="nav-item" role="button" tabindex="0" data-page="barbeiros" onclick="App.navigate('barbeiros')" onkeydown="if(event.key==='Enter')App.navigate('barbeiros')">
+          <span class="icon" aria-hidden="true">💈</span> Barbeiros
         </div>
-        <div class="nav-item" data-page="servicos" onclick="App.navigate('servicos')">
-          <span class="icon">📋</span> Serviços
+        <div class="nav-item" role="button" tabindex="0" data-page="servicos" onclick="App.navigate('servicos')" onkeydown="if(event.key==='Enter')App.navigate('servicos')">
+          <span class="icon" aria-hidden="true">📋</span> Serviços
         </div>
       </div>
       <div class="nav-section">
         <div class="nav-label">Financeiro</div>
-        <div class="nav-item" data-page="caixa" onclick="App.navigate('caixa')">
-          <span class="icon">💰</span> Caixa
+        <div class="nav-item" role="button" tabindex="0" data-page="caixa" onclick="App.navigate('caixa')" onkeydown="if(event.key==='Enter')App.navigate('caixa')">
+          <span class="icon" aria-hidden="true">💰</span> Caixa
         </div>
-        <div class="nav-item" data-page="relatorios" onclick="App.navigate('relatorios')">
-          <span class="icon">📈</span> Relatórios
+        <div class="nav-item" role="button" tabindex="0" data-page="relatorios" onclick="App.navigate('relatorios')" onkeydown="if(event.key==='Enter')App.navigate('relatorios')">
+          <span class="icon" aria-hidden="true">📈</span> Relatórios
         </div>
       </div>
     </nav>
@@ -60,8 +68,9 @@
     <div class="topbar">
       <div class="topbar-title" id="topbar-title">Dashboard</div>
       <div class="topbar-actions">
-        <div class="topbar-date" id="topbar-date"></div>
-        <button class="btn btn-primary btn-sm" onclick="App.quickAction()">
+        <!-- [HTML-6] Adicionado aria-live para anunciar a data dinamicamente para leitores de tela -->
+        <div class="topbar-date" id="topbar-date" aria-live="polite"></div>
+        <button class="btn btn-primary btn-sm" onclick="App.quickAction()" aria-label="Criar novo agendamento">
           ＋ Novo Agendamento
         </button>
       </div>
@@ -70,8 +79,9 @@
     <div class="content">
 
       <!-- ════ DASHBOARD ════ -->
-      <div class="page active" id="page-dashboard">
-        <div class="stats-grid" id="dash-stats"></div>
+      <!-- [HTML-7] Adicionado aria-label em todas as seções/pages para melhor semântica -->
+      <div class="page active" id="page-dashboard" role="main" aria-label="Dashboard">
+        <div class="stats-grid" id="dash-stats" aria-label="Estatísticas do dia"></div>
         <div class="two-col">
           <div>
             <div class="section-header">
@@ -79,7 +89,7 @@
               <button class="btn btn-ghost btn-sm" onclick="App.navigate('agenda')">Ver tudo</button>
             </div>
             <div class="table-wrap">
-              <div class="recent-list" id="dash-agenda"></div>
+              <div class="recent-list" id="dash-agenda" aria-label="Agenda de hoje"></div>
             </div>
           </div>
           <div>
@@ -88,19 +98,19 @@
               <button class="btn btn-ghost btn-sm" onclick="App.navigate('cortes')">Ver tudo</button>
             </div>
             <div class="table-wrap">
-              <div class="recent-list" id="dash-recentes"></div>
+              <div class="recent-list" id="dash-recentes" aria-label="Cortes recentes"></div>
             </div>
           </div>
         </div>
 
         <div style="margin-top:20px;">
           <div class="section-header"><div class="section-title">Desempenho dos Barbeiros</div></div>
-          <div class="three-col" id="dash-barbers"></div>
+          <div class="three-col" id="dash-barbers" aria-label="Desempenho por barbeiro"></div>
         </div>
       </div>
 
       <!-- ════ AGENDA ════ -->
-      <div class="page" id="page-agenda">
+      <div class="page" id="page-agenda" role="main" aria-label="Agenda">
         <div class="two-col mb-6">
           <div>
             <div class="section-header" style="margin-bottom:14px;">
@@ -108,10 +118,10 @@
               <button class="btn btn-primary btn-sm" onclick="ModalAgenda.open()">＋ Agendar</button>
             </div>
             <div class="table-wrap">
-              <table>
+              <table aria-label="Lista de agendamentos do dia">
                 <thead>
                   <tr>
-                    <th>Horário</th><th>Cliente</th><th>Barbeiro</th><th>Serviço</th><th>Status</th><th></th>
+                    <th scope="col">Horário</th><th scope="col">Cliente</th><th scope="col">Barbeiro</th><th scope="col">Serviço</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Ações</span></th>
                   </tr>
                 </thead>
                 <tbody id="agenda-tbody"></tbody>
@@ -119,33 +129,33 @@
             </div>
           </div>
           <div>
-            <div class="mini-cal" id="mini-cal"></div>
-            <div style="margin-top:14px;" id="agenda-day-info"></div>
+            <div class="mini-cal" id="mini-cal" aria-label="Mini calendário"></div>
+            <div style="margin-top:14px;" id="agenda-day-info" aria-live="polite"></div>
           </div>
         </div>
       </div>
 
       <!-- ════ CORTES ════ -->
-      <div class="page" id="page-cortes">
+      <div class="page" id="page-cortes" role="main" aria-label="Histórico de cortes">
         <div class="section-header">
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
             <div class="section-title">Histórico de Cortes</div>
             <div class="search-bar">
-              <span class="search-icon">🔍</span>
-              <input type="text" placeholder="Buscar cliente..." oninput="Cortes.filter(this.value)" id="corte-search">
+              <span class="search-icon" aria-hidden="true">🔍</span>
+              <input type="search" placeholder="Buscar cliente..." oninput="Cortes.filter(this.value)" id="corte-search" aria-label="Buscar corte por cliente">
             </div>
           </div>
           <button class="btn btn-primary" onclick="ModalCorte.open()">✂️ Registrar Corte</button>
         </div>
-        <div class="tabs">
-          <button class="tab active" onclick="Cortes.setTab('todos',this)">Todos</button>
-          <button class="tab" onclick="Cortes.setTab('hoje',this)">Hoje</button>
-          <button class="tab" onclick="Cortes.setTab('semana',this)">Esta Semana</button>
+        <div class="tabs" role="tablist" aria-label="Filtrar cortes por período">
+          <button class="tab active" role="tab" aria-selected="true" onclick="Cortes.setTab('todos',this)">Todos</button>
+          <button class="tab" role="tab" aria-selected="false" onclick="Cortes.setTab('hoje',this)">Hoje</button>
+          <button class="tab" role="tab" aria-selected="false" onclick="Cortes.setTab('semana',this)">Esta Semana</button>
         </div>
         <div class="table-wrap">
-          <table>
+          <table aria-label="Histórico de cortes">
             <thead>
-              <tr><th>#</th><th>Data/Hora</th><th>Cliente</th><th>Barbeiro</th><th>Serviço(s)</th><th>Total</th><th>Pagamento</th><th>Status</th><th></th></tr>
+              <tr><th scope="col">#</th><th scope="col">Data/Hora</th><th scope="col">Cliente</th><th scope="col">Barbeiro</th><th scope="col">Serviço(s)</th><th scope="col">Total</th><th scope="col">Pagamento</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Ações</span></th></tr>
             </thead>
             <tbody id="cortes-tbody"></tbody>
           </table>
@@ -153,21 +163,21 @@
       </div>
 
       <!-- ════ CLIENTES ════ -->
-      <div class="page" id="page-clientes">
+      <div class="page" id="page-clientes" role="main" aria-label="Clientes">
         <div class="section-header">
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
             <div class="section-title">Clientes</div>
             <div class="search-bar">
-              <span class="search-icon">🔍</span>
-              <input type="text" placeholder="Buscar..." oninput="Clientes.filter(this.value)">
+              <span class="search-icon" aria-hidden="true">🔍</span>
+              <input type="search" placeholder="Buscar..." oninput="Clientes.filter(this.value)" aria-label="Buscar cliente">
             </div>
           </div>
           <button class="btn btn-primary" onclick="ModalCliente.open()">＋ Novo Cliente</button>
         </div>
         <div class="table-wrap">
-          <table>
+          <table aria-label="Lista de clientes">
             <thead>
-              <tr><th>Cliente</th><th>Telefone</th><th>Barbeiro Fixo</th><th>Cortes</th><th>Gasto Total</th><th>Última Visita</th><th></th></tr>
+              <tr><th scope="col">Cliente</th><th scope="col">Telefone</th><th scope="col">Barbeiro Fixo</th><th scope="col">Cortes</th><th scope="col">Gasto Total</th><th scope="col">Última Visita</th><th scope="col"><span class="sr-only">Ações</span></th></tr>
             </thead>
             <tbody id="clientes-tbody"></tbody>
           </table>
@@ -175,50 +185,50 @@
       </div>
 
       <!-- ════ BARBEIROS ════ -->
-      <div class="page" id="page-barbeiros">
+      <div class="page" id="page-barbeiros" role="main" aria-label="Equipe de barbeiros">
         <div class="section-header">
           <div class="section-title">Equipe</div>
           <button class="btn btn-primary" onclick="ModalBarbeiro.open()">＋ Novo Barbeiro</button>
         </div>
-        <div class="three-col" id="barbeiros-grid"></div>
+        <div class="three-col" id="barbeiros-grid" aria-label="Cards dos barbeiros"></div>
       </div>
 
       <!-- ════ SERVIÇOS ════ -->
-      <div class="page" id="page-servicos">
+      <div class="page" id="page-servicos" role="main" aria-label="Serviços">
         <div class="section-header">
           <div class="section-title">Serviços</div>
           <button class="btn btn-primary" onclick="ModalServico.open()">＋ Novo Serviço</button>
         </div>
-        <div class="three-col" id="servicos-grid"></div>
+        <div class="three-col" id="servicos-grid" aria-label="Lista de serviços"></div>
       </div>
 
       <!-- ════ CAIXA ════ -->
-      <div class="page" id="page-caixa">
+      <div class="page" id="page-caixa" role="main" aria-label="Caixa financeiro">
         <div class="stats-grid" id="caixa-stats" style="grid-template-columns:repeat(3,1fr);"></div>
         <div class="two-col">
           <div>
             <div class="section-header"><div class="section-title">Movimentações</div></div>
             <div class="table-wrap">
-              <table>
-                <thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead>
+              <table aria-label="Movimentações financeiras">
+                <thead><tr><th scope="col">Data</th><th scope="col">Descrição</th><th scope="col">Tipo</th><th scope="col">Valor</th></tr></thead>
                 <tbody id="caixa-tbody"></tbody>
               </table>
             </div>
           </div>
           <div>
             <div class="section-header"><div class="section-title">Por Forma de Pagamento</div></div>
-            <div class="card" id="caixa-pagamentos"></div>
+            <div class="card" id="caixa-pagamentos" aria-label="Distribuição por forma de pagamento"></div>
           </div>
         </div>
       </div>
 
       <!-- ════ RELATÓRIOS ════ -->
-      <div class="page" id="page-relatorios">
+      <div class="page" id="page-relatorios" role="main" aria-label="Relatórios">
         <div class="section-header"><div class="section-title">Relatórios</div></div>
         <div class="three-col" id="relatorios-cards"></div>
         <div style="margin-top:20px;">
           <div class="section-header"><div class="section-title">Ranking de Serviços</div></div>
-          <div class="card" id="servicos-ranking"></div>
+          <div class="card" id="servicos-ranking" aria-label="Ranking de serviços mais realizados"></div>
         </div>
       </div>
 
@@ -227,39 +237,39 @@
 </div><!-- /app -->
 
 <!-- TOAST -->
-<div id="toast-container"></div>
+<div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
 <!-- MODAL AGENDAMENTO -->
-<div class="modal-overlay" id="modal-agenda">
+<div class="modal-overlay" id="modal-agenda" role="dialog" aria-modal="true" aria-labelledby="modal-agenda-title">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Novo Agendamento</div>
-      <button class="modal-close" onclick="ModalAgenda.close()">✕</button>
+      <div class="modal-title" id="modal-agenda-title">Novo Agendamento</div>
+      <button class="modal-close" onclick="ModalAgenda.close()" aria-label="Fechar modal">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
-          <label>Cliente</label>
+          <label for="ag-cliente">Cliente</label>
           <select id="ag-cliente"></select>
         </div>
         <div class="form-group">
-          <label>Barbeiro</label>
+          <label for="ag-barbeiro">Barbeiro</label>
           <select id="ag-barbeiro"></select>
         </div>
         <div class="form-group">
-          <label>Data</label>
+          <label for="ag-data">Data</label>
           <input type="date" id="ag-data">
         </div>
         <div class="form-group">
-          <label>Horário</label>
+          <label for="ag-hora">Horário</label>
           <input type="time" id="ag-hora" step="1800">
         </div>
         <div class="form-group span2">
           <label>Serviços</label>
-          <div class="chips" id="ag-servicos-chips"></div>
+          <div class="chips" id="ag-servicos-chips" role="group" aria-label="Selecione os serviços"></div>
         </div>
         <div class="form-group span2">
-          <label>Observação</label>
+          <label for="ag-obs">Observação</label>
           <textarea id="ag-obs" rows="2" placeholder="Alguma observação..."></textarea>
         </div>
       </div>
@@ -272,37 +282,37 @@
 </div>
 
 <!-- MODAL CORTE -->
-<div class="modal-overlay" id="modal-corte">
+<div class="modal-overlay" id="modal-corte" role="dialog" aria-modal="true" aria-labelledby="modal-corte-title">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">Registrar Corte</div>
-      <button class="modal-close" onclick="ModalCorte.close()">✕</button>
+      <div class="modal-title" id="modal-corte-title">Registrar Corte</div>
+      <button class="modal-close" onclick="ModalCorte.close()" aria-label="Fechar modal">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
-          <label>Cliente</label>
+          <label for="co-cliente">Cliente</label>
           <select id="co-cliente"></select>
         </div>
         <div class="form-group">
-          <label>Barbeiro</label>
+          <label for="co-barbeiro">Barbeiro</label>
           <select id="co-barbeiro"></select>
         </div>
         <div class="form-group">
-          <label>Data</label>
+          <label for="co-data">Data</label>
           <input type="date" id="co-data">
         </div>
         <div class="form-group">
-          <label>Hora</label>
+          <label for="co-hora">Hora</label>
           <input type="time" id="co-hora">
         </div>
         <div class="form-group span2">
           <label>Serviços Realizados</label>
-          <div class="chips" id="co-servicos-chips"></div>
+          <div class="chips" id="co-servicos-chips" role="group" aria-label="Selecione os serviços realizados"></div>
         </div>
         <hr class="form-sep">
         <div class="form-group">
-          <label>Pagamento</label>
+          <label for="co-pagamento">Pagamento</label>
           <select id="co-pagamento">
             <option value="dinheiro">💵 Dinheiro</option>
             <option value="pix">📱 PIX</option>
@@ -311,11 +321,11 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Total (R$)</label>
+          <label for="co-total">Total (R$)</label>
           <input type="number" id="co-total" step="0.01" min="0" placeholder="0,00">
         </div>
         <div class="form-group span2">
-          <label>Observações</label>
+          <label for="co-obs">Observações</label>
           <textarea id="co-obs" rows="2" placeholder="Observações do corte..."></textarea>
         </div>
       </div>
@@ -328,28 +338,28 @@
 </div>
 
 <!-- MODAL CLIENTE -->
-<div class="modal-overlay" id="modal-cliente">
+<div class="modal-overlay" id="modal-cliente" role="dialog" aria-modal="true" aria-labelledby="modal-cliente-title">
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-cliente-title">Novo Cliente</div>
-      <button class="modal-close" onclick="ModalCliente.close()">✕</button>
+      <button class="modal-close" onclick="ModalCliente.close()" aria-label="Fechar modal">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group span2">
-          <label>Nome Completo</label>
-          <input type="text" id="cl-nome" placeholder="Nome do cliente">
+          <label for="cl-nome">Nome Completo</label>
+          <input type="text" id="cl-nome" placeholder="Nome do cliente" autocomplete="name">
         </div>
         <div class="form-group">
-          <label>Telefone / WhatsApp</label>
-          <input type="text" id="cl-tel" placeholder="(00) 00000-0000">
+          <label for="cl-tel">Telefone / WhatsApp</label>
+          <input type="tel" id="cl-tel" placeholder="(00) 00000-0000" autocomplete="tel">
         </div>
         <div class="form-group">
-          <label>Barbeiro Favorito</label>
+          <label for="cl-barbeiro">Barbeiro Favorito</label>
           <select id="cl-barbeiro"><option value="">— Nenhum —</option></select>
         </div>
         <div class="form-group span2">
-          <label>Observações / Preferências</label>
+          <label for="cl-obs">Observações / Preferências</label>
           <textarea id="cl-obs" rows="2" placeholder="Estilo preferido, alergias, etc..."></textarea>
         </div>
       </div>
@@ -362,32 +372,32 @@
 </div>
 
 <!-- MODAL BARBEIRO -->
-<div class="modal-overlay" id="modal-barbeiro">
+<div class="modal-overlay" id="modal-barbeiro" role="dialog" aria-modal="true" aria-labelledby="modal-barbeiro-title">
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-barbeiro-title">Novo Barbeiro</div>
-      <button class="modal-close" onclick="ModalBarbeiro.close()">✕</button>
+      <button class="modal-close" onclick="ModalBarbeiro.close()" aria-label="Fechar modal">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group">
-          <label>Nome</label>
+          <label for="ba-nome">Nome</label>
           <input type="text" id="ba-nome" placeholder="Nome do barbeiro">
         </div>
         <div class="form-group">
-          <label>Especialidade</label>
+          <label for="ba-esp">Especialidade</label>
           <input type="text" id="ba-esp" placeholder="Ex: Degradê, Tesoura...">
         </div>
         <div class="form-group">
-          <label>Telefone</label>
-          <input type="text" id="ba-tel" placeholder="(00) 00000-0000">
+          <label for="ba-tel">Telefone</label>
+          <input type="tel" id="ba-tel" placeholder="(00) 00000-0000">
         </div>
         <div class="form-group">
-          <label>Comissão (%)</label>
+          <label for="ba-com">Comissão (%)</label>
           <input type="number" id="ba-com" min="0" max="100" step="1" placeholder="50">
         </div>
         <div class="form-group span2">
-          <label>Status</label>
+          <label for="ba-status">Status</label>
           <select id="ba-status">
             <option value="ativo">✅ Ativo</option>
             <option value="férias">🏖️ Férias</option>
@@ -404,28 +414,28 @@
 </div>
 
 <!-- MODAL SERVIÇO -->
-<div class="modal-overlay" id="modal-servico">
+<div class="modal-overlay" id="modal-servico" role="dialog" aria-modal="true" aria-labelledby="modal-servico-title">
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="modal-servico-title">Novo Serviço</div>
-      <button class="modal-close" onclick="ModalServico.close()">✕</button>
+      <button class="modal-close" onclick="ModalServico.close()" aria-label="Fechar modal">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group span2">
-          <label>Nome do Serviço</label>
+          <label for="sv-nome">Nome do Serviço</label>
           <input type="text" id="sv-nome" placeholder="Ex: Corte Degradê">
         </div>
         <div class="form-group">
-          <label>Preço (R$)</label>
+          <label for="sv-preco">Preço (R$)</label>
           <input type="number" id="sv-preco" min="0" step="0.50" placeholder="0,00">
         </div>
         <div class="form-group">
-          <label>Duração (min)</label>
+          <label for="sv-duracao">Duração (min)</label>
           <input type="number" id="sv-duracao" min="5" step="5" placeholder="30">
         </div>
         <div class="form-group span2">
-          <label>Categoria</label>
+          <label for="sv-cat">Categoria</label>
           <select id="sv-cat">
             <option value="corte">✂️ Corte</option>
             <option value="barba">🪒 Barba</option>
@@ -444,7 +454,7 @@
 </div>
 
 <!-- MODAL CONFIRM -->
-<div class="modal-overlay" id="modal-confirm">
+<div class="modal-overlay" id="modal-confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
   <div class="confirm-dialog">
     <div class="confirm-icon" id="confirm-icon">⚠️</div>
     <div class="confirm-title" id="confirm-title">Confirmar</div>
@@ -455,6 +465,9 @@
     </div>
   </div>
 </div>
+
+<!-- [HTML-7b] Classe utilitária para leitores de tela (screen-reader only) -->
+<style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
 
 <script src="app.js"></script>
 </body>

